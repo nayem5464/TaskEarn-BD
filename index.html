@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="RewardHub - a simple rewards dashboard demo">
+<title>RewardHub - Earn & Rewards</title>
+<style>
+:root{
+  --bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#718096;
+  --primary:#5b5cf0;--primary2:#7c3aed;--success:#16a34a;
+  --danger:#dc2626;--border:#e7eaf0;--shadow:0 12px 35px rgba(31,41,55,.08)
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+button,input,select{font:inherit}
+.hidden{display:none!important}
+.container{max-width:1100px;margin:auto;padding:20px}
+.topbar{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10}
+.nav{max-width:1100px;margin:auto;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:15px}
+.brand{font-size:22px;font-weight:800;color:var(--primary)}
+.nav-right{display:flex;align-items:center;gap:10px}
+.btn{border:0;border-radius:12px;padding:11px 16px;cursor:pointer;font-weight:700;transition:.2s}
+.btn:hover{transform:translateY(-1px)}
+.btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff}
+.btn-light{background:#f0f2f7;color:var(--text)}
+.btn-danger{background:#fee2e2;color:#991b1b}
+.auth-wrap{min-height:100vh;display:grid;place-items:center;padding:20px;background:linear-gradient(135deg,#eef2ff,#f8fafc)}
+.auth-card{width:min(430px,100%);background:#fff;border:1px solid var(--border);border-radius:24px;padding:30px;box-shadow:var(--shadow)}
+.auth-card h1{margin:0 0 8px;font-size:28px}
+.auth-card p{color:var(--muted);margin:0 0 22px}
+.input{width:100%;padding:13px 14px;border:1px solid var(--border);border-radius:12px;outline:none;margin:7px 0 12px;background:#fff}
+.input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(91,92,240,.1)}
+label{font-size:13px;font-weight:700}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.auth-switch{text-align:center;margin-top:18px;color:var(--muted);font-size:14px}
+.link{color:var(--primary);cursor:pointer;font-weight:700}
+.alert{padding:12px 14px;border-radius:12px;margin:12px 0;font-size:14px}
+.alert-error{background:#fee2e2;color:#991b1b}.alert-success{background:#dcfce7;color:#166534}
+.hero{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border-radius:24px;padding:28px;margin:24px 0;box-shadow:var(--shadow)}
+.hero small{opacity:.85}.hero h2{font-size:32px;margin:8px 0}.hero p{opacity:.9;margin:0}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:18px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:20px;box-shadow:0 5px 18px rgba(31,41,55,.04)}
+.stat-label{color:var(--muted);font-size:13px}.stat-value{font-size:27px;font-weight:800;margin-top:7px}
+.section-title{margin:26px 0 12px;font-size:20px}
+.actions{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.action-card{cursor:pointer}.action-card h3{margin:12px 0 6px}.action-card p{color:var(--muted);font-size:14px;margin:0}
+.icon{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;background:#eef2ff;font-size:21px}
+.progress{height:9px;background:#edf0f5;border-radius:20px;overflow:hidden;margin:12px 0}
+.progress>div{height:100%;width:0;background:linear-gradient(90deg,var(--primary),var(--primary2));transition:.4s}
+.refbox{display:flex;gap:8px}.refbox input{margin:0;flex:1}
+.table-wrap{overflow:auto}.table{width:100%;border-collapse:collapse}.table th,.table td{padding:12px;text-align:left;border-bottom:1px solid var(--border);font-size:14px}
+.badge{display:inline-block;padding:5px 9px;border-radius:99px;font-size:12px;font-weight:700;background:#eef2ff;color:#4338ca}
+footer{text-align:center;color:var(--muted);padding:30px 0}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
+.modal.show{display:flex}.modal-card{background:#fff;border-radius:20px;padding:24px;width:min(450px,100%);position:relative}
+.close{position:absolute;right:16px;top:12px;border:0;background:transparent;font-size:25px;cursor:pointer}
+.note{font-size:12px;color:var(--muted);line-height:1.6}
+@media(max-width:850px){.grid{grid-template-columns:repeat(2,1fr)}.actions{grid-template-columns:1fr}}
+@media(max-width:560px){.container{padding:14px}.nav{padding:12px 14px}.hero h2{font-size:25px}.grid{grid-template-columns:1fr 1fr}.form-row{grid-template-columns:1fr}.auth-card{padding:22px}}
+</style>
+</head>
+<body>
+
+<div id="authPage" class="auth-wrap">
+  <div class="auth-card">
+    <div id="loginBox">
+      <h1>RewardHub</h1>
+      <p>Sign in to your rewards dashboard.</p>
+      <div id="loginAlert"></div>
+      <label>Email</label>
+      <input id="loginEmail" class="input" type="email" placeholder="you@example.com">
+      <label>Password</label>
+      <input id="loginPassword" class="input" type="password" placeholder="••••••••">
+      <button class="btn btn-primary" style="width:100%" onclick="login()">Login</button>
+      <div class="auth-switch">Don't have an account? <span class="link" onclick="showSignup()">Create one</span></div>
+    </div>
+
+    <div id="signupBox" class="hidden">
+      <h1>Create account</h1>
+      <p>Start using your rewards dashboard.</p>
+      <div id="signupAlert"></div>
+      <label>Name</label>
+      <input id="signupName" class="input" placeholder="Your name">
+      <label>Email</label>
+      <input id="signupEmail" class="input" type="email" placeholder="you@example.com">
+      <label>Password</label>
+      <input id="signupPassword" class="input" type="password" placeholder="Minimum 6 characters">
+      <label>Referral code (optional)</label>
+      <input id="signupReferral" class="input" placeholder="REF123">
+      <button class="btn btn-primary" style="width:100%" onclick="signup()">Create Account</button>
+      <div class="auth-switch">Already registered? <span class="link" onclick="showLogin()">Login</span></div>
+    </div>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <header class="topbar">
+    <div class="nav">
+      <div class="brand">RewardHub</div>
+      <div class="nav-right">
+        <span id="navUser" class="badge"></span>
+        <button class="btn btn-light" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <small>Welcome back</small>
+      <h2 id="welcomeName">User</h2>
+      <p>Complete available rewards and track your balance.</p>
+    </section>
+
+    <section class="grid">
+      <div class="card"><div class="stat-label">Available Balance</div><div id="balance" class="stat-value">৳0.00</div></div>
+      <div class="card"><div class="stat-label">Total Earned</div><div id="earned" class="stat-value">৳0.00</div></div>
+      <div class="card"><div class="stat-label">Referrals</div><div id="referrals" class="stat-value">0</div></div>
+      <div class="card"><div class="stat-label">Today's Tasks</div><div id="tasks" class="stat-value">0/5</div></div>
+    </section>
+
+    <h2 class="section-title">Earn Rewards</h2>
+    <section class="actions">
+      <div class="card action-card" onclick="startAdTask()">
+        <div class="icon">🔗</div>
+        <h3>Visit & Earn</h3>
+        <p>Open the configured promotional link and complete the timer.</p>
+      </div>
+      <div class="card action-card" onclick="claimDaily()">
+        <div class="icon">🎁</div>
+        <h3>Daily Reward</h3>
+        <p>Claim your once-per-day reward.</p>
+      </div>
+      <div class="card action-card" onclick="openWithdraw()">
+        <div class="icon">💸</div>
+        <h3>Withdraw</h3>
+        <p>Submit a withdrawal request when eligible.</p>
+      </div>
+    </section>
+
+    <h2 class="section-title">Today's Progress</h2>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;gap:10px">
+        <span>Daily tasks</span><strong id="progressText">0 / 5</strong>
+      </div>
+      <div class="progress"><div id="progressBar"></div></div>
+      <div class="note">Only count genuine user actions. Do not incentivize invalid clicks or automated traffic.</div>
+    </div>
+
+    <h2 class="section-title">Referral Program</h2>
+    <div class="card">
+      <p>Share your referral code with people who genuinely want to use your app.</p>
+      <div class="refbox">
+        <input id="refCode" class="input" readonly>
+        <button class="btn btn-primary" onclick="copyReferral()">Copy</button>
+      </div>
+    </div>
+
+    <h2 class="section-title">Recent Activity</h2>
+    <div class="card table-wrap">
+      <table class="table">
+        <thead><tr><th>Date</th><th>Activity</th><th>Amount</th></tr></thead>
+        <tbody id="activityBody"><tr><td colspan="3">No activity yet.</td></tr></tbody>
+      </table>
+    </div>
+
+    <footer>© 2026 RewardHub • Demo rewards interface</footer>
+  </main>
+</div>
+
+<div id="taskModal" class="modal">
+  <div class="modal-card">
+    <button class="close" onclick="closeModal('taskModal')">×</button>
+    <h2>Visit & Earn</h2>
+    <p>Open the promotional destination in a new tab. Return here after the timer finishes.</p>
+    <p><strong>Reward:</strong> ৳0.10</p>
+    <button id="openAdBtn" class="btn btn-primary" style="width:100%" onclick="openPromo()">Open Link</button>
+    <div id="timerArea" class="hidden" style="margin-top:15px">
+      <div class="progress"><div id="taskProgress"></div></div>
+      <p id="timerText" style="text-align:center;font-weight:700">10 seconds</p>
+    </div>
+  </div>
+</div>
+
+<div id="withdrawModal" class="modal">
+  <div class="modal-card">
+    <button class="close" onclick="closeModal('withdrawModal')">×</button>
+    <h2>Withdrawal Request</h2>
+    <div id="withdrawAlert"></div>
+    <label>Method</label>
+    <select id="withdrawMethod" class="input">
+      <option>bKash</option><option>Nagad</option><option>PayPal</option>
+    </select>
+    <label>Account / Number</label>
+    <input id="withdrawAccount" class="input" placeholder="Enter your account">
+    <label>Amount</label>
+    <input id="withdrawAmount" class="input" type="number" min="1" step="0.01" placeholder="Minimum ৳10">
+    <button class="btn btn-primary" style="width:100%" onclick="requestWithdraw()">Submit Request</button>
+    <p class="note" style="margin-top:12px">This front-end demo does not process real payments. Connect a secure backend/payment system before production use.</p>
+  </div>
+</div>
+
+<script>
+/* =========================
+   CONFIGURATION
+   ========================= */
+const CONFIG = {
+  PROMO_LINK: "https://example.com/YOUR_ADSTERRA_LINK",
+  TASK_REWARD: 0.10,
+  DAILY_REWARD: 0.25,
+  TASK_DURATION: 10,
+  DAILY_TASK_LIMIT: 5,
+  MIN_WITHDRAW: 10
+};
+
+let currentUser = null;
+let taskTimer = null;
+
+const $ = id => document.getElementById(id);
+
+function getUsers(){ return JSON.parse(localStorage.getItem("rh_users") || "{}"); }
+function saveUsers(users){ localStorage.setItem("rh_users", JSON.stringify(users)); }
+function currentKey(){ return localStorage.getItem("rh_current"); }
+
+function showLogin(){
+  $("loginBox").classList.remove("hidden"); $("signupBox").classList.add("hidden");
+}
+function showSignup(){
+  $("signupBox").classList.remove("hidden"); $("loginBox").classList.add("hidden");
+}
+function alertBox(id,msg,type="error"){
+  $(id).innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+}
+function makeRef(){
+  return "REF" + Math.random().toString(36).substring(2,8).toUpperCase();
+}
+
+function signup(){
+  const name=$("signupName").value.trim();
+  const email=$("signupEmail").value.trim().toLowerCase();
+  const pass=$("signupPassword").value;
+  const referral=$("signupReferral").value.trim();
+
+  if(!name || !email || pass.length<6){
+    alertBox("signupAlert","Please enter a name, valid email and a password of at least 6 characters.");
+    return;
+  }
+  const users=getUsers();
+  if(users[email]){
+    alertBox("signupAlert","An account with this email already exists.");
+    return;
+  }
+
+  users[email]={
+    name,email,pass,balance:0,earned:0,referrals:0,refCode:makeRef(),
+    referredBy:referral,tasks:0,lastTaskDate:"",lastDaily:"",
+    activity:[]
+  };
+  saveUsers(users);
+  localStorage.setItem("rh_current",email);
+  currentUser=users[email];
+  renderApp();
+}
+
+function login(){
+  const email=$("loginEmail").value.trim().toLowerCase();
+  const pass=$("loginPassword").value;
+  const users=getUsers();
+
+  if(!users[email] || users[email].pass!==pass){
+    alertBox("loginAlert","Incorrect email or password.");
+    return;
+  }
+  localStorage.setItem("rh_current",email);
+  currentUser=users[email];
+  renderApp();
+}
+
+function logout(){
+  localStorage.removeItem("rh_current");
+  currentUser=null;
+  $("app").classList.add("hidden");
+  $("authPage").classList.remove("hidden");
+  showLogin();
+}
+
+function today(){
+  return new Date().toISOString().slice(0,10);
+}
+
+function ensureDailyReset(){
+  if(currentUser.lastTaskDate!==today()){
+    currentUser.tasks=0;
+    currentUser.lastTaskDate=today();
+    saveCurrent();
+  }
+}
+
+function saveCurrent(){
+  const users=getUsers();
+  users[currentUser.email]=currentUser;
+  saveUsers(users);
+}
+
+function renderApp(){
+  $("authPage").classList.add("hidden");
+  $("app").classList.remove("hidden");
+  ensureDailyReset();
+  $("welcomeName").textContent=currentUser.name;
+  $("navUser").textContent=currentUser.email;
+  $("balance").textContent="৳"+currentUser.balance.toFixed(2);
+  $("earned").textContent="৳"+currentUser.earned.toFixed(2);
+  $("referrals").textContent=currentUser.referrals;
+  $("tasks").textContent=currentUser.tasks+"/"+CONFIG.DAILY_TASK_LIMIT;
+  $("progressText").textContent=currentUser.tasks+" / "+CONFIG.DAILY_TASK_LIMIT;
+  $("progressBar").style.width=Math.min(100,(currentUser.tasks/CONFIG.DAILY_TASK_LIMIT)*100)+"%";
+  $("refCode").value=currentUser.refCode;
+  renderActivity();
+}
+
+function renderActivity(){
+  const body=$("activityBody");
+  if(!currentUser.activity.length){
+    body.innerHTML='<tr><td colspan="3">No activity yet.</td></tr>'; return;
+  }
+  body.innerHTML=currentUser.activity.slice().reverse().slice(0,10).map(a=>
+    `<tr><td>${a.date}</td><td>${a.type}</td><td>৳${Number(a.amount).toFixed(2)}</td></tr>`
+  ).join("");
+}
+
+function startAdTask(){
+  ensureDailyReset();
+  if(currentUser.tasks>=CONFIG.DAILY_TASK_LIMIT){
+    alert("You have reached today's task limit.");
+    return;
+  }
+  $("taskModal").classList.add("show");
+  $("timerArea").classList.add("hidden");
+  $("openAdBtn").disabled=false;
+  $("openAdBtn").textContent="Open Link";
+}
+
+function openPromo(){
+  const url=CONFIG.PROMO_LINK;
+  if(url.includes("example.com/YOUR_ADSTERRA_LINK")){
+    alert("Please replace CONFIG.PROMO_LINK with your actual Adsterra link first.");
+    return;
+  }
+  window.open(url,"_blank","noopener,noreferrer");
+  $("openAdBtn").disabled=true;
+  $("timerArea").classList.remove("hidden");
+
+  let left=CONFIG.TASK_DURATION;
+  $("timerText").textContent=left+" seconds";
+  $("taskProgress").style.width="0%";
+
+  clearInterval(taskTimer);
+  taskTimer=setInterval(()=>{
+    left--;
+    $("timerText").textContent=left+" seconds";
+    $("taskProgress").style.width=((CONFIG.TASK_DURATION-left)/CONFIG.TASK_DURATION*100)+"%";
+    if(left<=0){
+      clearInterval(taskTimer);
+      completeTask();
+    }
+  },1000);
+}
+
+function completeTask(){
+  currentUser.tasks++;
+  currentUser.balance+=CONFIG.TASK_REWARD;
+  currentUser.earned+=CONFIG.TASK_REWARD;
+  currentUser.activity.push({date:today(),type:"Visit & Earn",amount:CONFIG.TASK_REWARD});
+  saveCurrent();
+  renderApp();
+  closeModal("taskModal");
+  alert("Task completed. ৳"+CONFIG.TASK_REWARD.toFixed(2)+" added.");
+}
+
+function claimDaily(){
+  if(currentUser.lastDaily===today()){
+    alert("You already claimed today's reward.");
+    return;
+  }
+  currentUser.lastDaily=today();
+  currentUser.balance+=CONFIG.DAILY_REWARD;
+  currentUser.earned+=CONFIG.DAILY_REWARD;
+  currentUser.activity.push({date:today(),type:"Daily Reward",amount:CONFIG.DAILY_REWARD});
+  saveCurrent(); renderApp();
+  alert("Daily reward claimed: ৳"+CONFIG.DAILY_REWARD.toFixed(2));
+}
+
+function copyReferral(){
+  navigator.clipboard.writeText(currentUser.refCode).then(()=>alert("Referral code copied."));
+}
+
+function openWithdraw(){
+  $("withdrawModal").classList.add("show");
+  $("withdrawAlert").innerHTML="";
+}
+function requestWithdraw(){
+  const method=$("withdrawMethod").value;
+  const account=$("withdrawAccount").value.trim();
+  const amount=Number($("withdrawAmount").value);
+
+  if(!account || !amount || amount<CONFIG.MIN_WITHDRAW){
+    alertBox("withdrawAlert","Enter valid details. Minimum withdrawal is ৳"+CONFIG.MIN_WITHDRAW+".");
+    return;
+  }
+  if(amount>currentUser.balance){
+    alertBox("withdrawAlert","Insufficient balance.");
+    return;
+  }
+
+  // Demo only: reserve the amount locally.
+  currentUser.balance-=amount;
+  currentUser.activity.push({date:today(),type:"Withdrawal ("+method+")",amount:-amount});
+  saveCurrent(); renderApp();
+  alertBox("withdrawAlert","Request recorded locally. A real payout requires a secure backend.","success");
+  $("withdrawAccount").value="";
+  $("withdrawAmount").value="";
+}
+
+function closeModal(id){
+  $(id).classList.remove("show");
+  clearInterval(taskTimer);
+}
+
+window.addEventListener("load",()=>{
+  const key=currentKey();
+  if(key){
+    const users=getUsers();
+    if(users[key]){currentUser=users[key];renderApp();return;}
+  }
+  showLogin();
+});
+</script>
+</body>
+</html>
